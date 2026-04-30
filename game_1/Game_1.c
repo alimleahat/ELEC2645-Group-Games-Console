@@ -31,6 +31,7 @@
 extern ST7789V2_cfg_t cfg0;
 extern Buzzer_cfg_t   buzzer_cfg;
 extern Joystick_cfg_t joystick_cfg;
+extern Joystick_t     joystick_data;
 
 /* ============================================================
  * Display layout  (240 x 320 portrait LCD)
@@ -406,8 +407,8 @@ MenuState Game1_Run(void) {
 
         /* ===== INPUT ===== */
         Input_Read();
-        Joystick_Read(&joystick_cfg);
-        UserInput joy = Joystick_GetInput(&joystick_cfg);
+        Joystick_Read(&joystick_cfg, &joystick_data);
+        UserInput joy = Joystick_GetInput(&joystick_data);
         Direction dir = joy.direction;
 
         /* BT3: cancel selection first press, exit to menu second press */
