@@ -32,6 +32,21 @@ extern ST7789V2_cfg_t cfg0;
 extern Buzzer_cfg_t   buzzer_cfg;
 extern Joystick_cfg_t joystick_cfg;
 extern Joystick_t     joystick_data;
+extern ADC_HandleTypeDef hadc1;
+
+/* ---- Second joystick for Player 2 (same pins as Tron Game 3) ---- */
+static Joystick_cfg_t joystick2_cfg = {
+    .adc            = &hadc1,
+    .x_channel      = ADC_CHANNEL_5,
+    .y_channel      = ADC_CHANNEL_6,
+    .sampling_time  = ADC_SAMPLETIME_47CYCLES_5,
+    .center_x       = JOYSTICK_DEFAULT_CENTER_X,
+    .center_y       = JOYSTICK_DEFAULT_CENTER_Y,
+    .deadzone       = JOYSTICK_DEADZONE,
+    .setup_done     = 0
+};
+static Joystick_t joystick2_data;
+static uint8_t    joystick2_ready = 0;  /* init once, persist across menu re-entries */
 
 /* ============================================================
  * Display layout  (240 x 320 portrait LCD)
@@ -98,7 +113,8 @@ static uint8_t white_in_check;
 static uint8_t black_in_check;
 static uint8_t valid_moves[8][8];   /* pseudo-legal destinations */
 static uint8_t temp_moves[8][8];    /* scratch buffer for check detection */
-static Direction last_joy_dir;      /* for edge-triggered cursor movement */
+static Direction last_joy1_dir;     /* edge-trigger: white's joystick   */
+static Direction last_joy2_dir;     /* edge-trigger: black's joystick   */
 
 #define CHESS_FRAME_MS  50          /* ~20 FPS  */
 
@@ -352,9 +368,9 @@ static void render_board(void) {
 
 static void render_status(void) {
     if (!game_over) {
-        /* Top bar: whose turn */
+        /* Top bar: whose turn + which joystick they use */
         LCD_printString(
-            (current_player == 0) ? "WHITE'S TURN" : "BLACK'S TURN",
+            (current_player == 0) ? "WHITE (JOY1)" : "BLACK (JOY2)",
             20, 5, COL_WHITE, 1);
 
         /* Check alert */
@@ -381,9 +397,15 @@ static void render_status(void) {
  * ============================================================ */
 MenuState Game1_Run(void) {
 
-    /* ---------- Initialise state ---------- */
+    /* ---------- Initialise second joystick (once only) ---------- */
+    if (!joystick2_ready) {
+        Joystick_Init(&joystick2_cfg);
+        joystick2_ready = 1;
+    }
+
+    /* ---------- Initialise game state ---------- */
     chess_init_board();
-    cursor_row     = 6;     /* start cursor on white's king pawn */
+    cursor_row     = 6;     /* start cursor on white's side */
     cursor_col     = 4;
     sel_row        = -1;
     sel_col        = -1;
@@ -392,7 +414,8 @@ MenuState Game1_Run(void) {
     winner         = 0;
     white_in_check = 0;
     black_in_check = 0;
-    last_joy_dir   = CENTRE;
+    last_joy1_dir  = CENTRE;
+    last_joy2_dir  = CENTRE;
     memset(valid_moves, 0, sizeof(valid_moves));
 
     /* Startup fanfare */
@@ -407,9 +430,17 @@ MenuState Game1_Run(void) {
 
         /* ===== INPUT ===== */
         Input_Read();
-        Joystick_Read(&joystick_cfg, &joystick_data);
-        UserInput joy = Joystick_GetInput(&joystick_data);
-        Direction dir = joy.direction;
+
+        /* Read both joysticks — P1 (White) on joy1, P2 (Black) on joy2 */
+        Joystick_Read(&joystick_cfg,  &joystick_data);
+        Joystick_Read(&joystick2_cfg, &joystick2_data);
+
+        /* Active player picks their joystick */
+        Direction dir = (current_player == 0)
+                        ? Joystick_GetInput(&joystick_data).direction
+                        : Joystick_GetInput(&joystick2_data).direction;
+
+        Direction *last_dir = (current_player == 0) ? &last_joy1_dir : &last_joy2_dir;
 
         /* BT3: cancel selection first press, exit to menu second press */
         if (current_input.btn3_pressed) {
@@ -425,7 +456,7 @@ MenuState Game1_Run(void) {
         if (!game_over) {
 
             /* ===== CURSOR MOVEMENT (edge-triggered on direction change) ===== */
-            if (dir != last_joy_dir && dir != CENTRE) {
+            if (dir != *last_dir && dir != CENTRE) {
                 switch (dir) {
                     case N:  if (cursor_row > 0) cursor_row--; break;
                     case S:  if (cursor_row < 7) cursor_row++; break;
@@ -438,7 +469,7 @@ MenuState Game1_Run(void) {
                     default: break;
                 }
             }
-            last_joy_dir = dir;
+            *last_dir = dir;
 
             /* ===== BT2: SELECT or MOVE ===== */
             if (current_input.btn2_pressed) {
@@ -483,6 +514,11 @@ MenuState Game1_Run(void) {
                             current_player ^= 1u;
                             white_in_check = is_in_check( 1);
                             black_in_check = is_in_check(-1);
+                            /* Move cursor to new player's side and clear edge state */
+                            cursor_row    = (current_player == 0) ? 7u : 0u;
+                            cursor_col    = 4u;
+                            last_joy1_dir = CENTRE;
+                            last_joy2_dir = CENTRE;
                             /* Move sound */
                             buzzer_tone(&buzzer_cfg, 440, 40);
                             HAL_Delay(45);
