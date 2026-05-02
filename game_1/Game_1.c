@@ -400,6 +400,7 @@ MenuState Game1_Run(void) {
     /* ---------- Initialise second joystick (once only) ---------- */
     if (!joystick2_ready) {
         Joystick_Init(&joystick2_cfg);
+        Joystick_Calibrate(&joystick2_cfg);
         joystick2_ready = 1;
     }
 

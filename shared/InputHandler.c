@@ -35,30 +35,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     static uint32_t last_btn3_interrupt = 0;
     uint32_t current_time = HAL_GetTick();
     
-    // Handle BT2
-    if (GPIO_Pin == BTN2_Pin) {
-        // Software debouncing (200ms)
+    // Handle B1 (onboard blue button, PC13) mapped to BT2 action
+    if (GPIO_Pin == B1_Pin) {
         if ((current_time - last_btn2_interrupt) > 200) {
             last_btn2_interrupt = current_time;
-            
-            // Toggle LED to indicate button press
-            HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-            
-            // Set flag indicating button was pressed
             btn2_raw_press = 1;
         }
     }
     
-    // Handle BT3 (joystick button)
+    // Handle BT3
     if (GPIO_Pin == BTN3_Pin) {
-        // Software debouncing (200ms)
         if ((current_time - last_btn3_interrupt) > 200) {
             last_btn3_interrupt = current_time;
-            
-            // Toggle LED to indicate button press
-            HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-            
-            // Set flag indicating button was pressed
             btn3_raw_press = 1;
         }
     }

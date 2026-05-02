@@ -458,6 +458,7 @@ MenuState Game3_Run(void)
 {
     if (!p2_joystick_ready) {
         Joystick_Init(&joystick2_cfg);
+        Joystick_Calibrate(&joystick2_cfg);
         p2_joystick_ready = 1u;
     }
 

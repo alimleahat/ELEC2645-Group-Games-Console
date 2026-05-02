@@ -217,6 +217,7 @@ int main(void)
     
     // Initialize Joystick
     Joystick_Init(&joystick_cfg);
+    Joystick_Calibrate(&joystick_cfg);
     
     // Clear screen
     LCD_Fill_Buffer(0);
