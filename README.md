@@ -10,9 +10,9 @@
 
 | Slot | Student | Game | Status |
 |------|---------|------|--------|
-| Game 1 | Student 1 | ♟ Two-Player Chess | ✅ Complete |
-| Game 2 | Student 2 | *(Your game here)* | 🔧 In progress |
-| Game 3 | Student 3 | *(Your game here)* | 🔧 In progress |
+| Game 1 | Ali | ♟ Two-Player Chess | ✅ Complete |
+| Game 2 | Ahmad | 🚀 Rock-It Ralph | ✅ Complete |
+| Game 3 | Ali | 🏍 Tron Light Cycles | ✅ Complete |
 
 ---
 
