@@ -51,7 +51,7 @@ static PongEngine_t pong_engine;
  */
 static uint8_t game2_read_action(void)
 {
-    return (HAL_GPIO_ReadPin(BTN2_GPIO_Port, BTN2_Pin) == GPIO_PIN_RESET) ? 1 : 0;
+    return (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET) ? 1 : 0;
 }
 
 /**
