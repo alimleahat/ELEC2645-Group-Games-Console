@@ -35,16 +35,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     static uint32_t last_btn3_interrupt = 0;
     uint32_t current_time = HAL_GetTick();
     
-    // Handle B1 (onboard blue button, PC13) mapped to BT2 action
-    if (GPIO_Pin == B1_Pin) {
+    // Handle joystick press (BTN2, PC2) — interact / action
+    if (GPIO_Pin == BTN2_Pin) {
         if ((current_time - last_btn2_interrupt) > 200) {
             last_btn2_interrupt = current_time;
             btn2_raw_press = 1;
         }
     }
-    
-    // Handle BT3
-    if (GPIO_Pin == BTN3_Pin) {
+
+    // Handle B1 (onboard blue button, PC13) — back to menu
+    if (GPIO_Pin == B1_Pin) {
         if ((current_time - last_btn3_interrupt) > 200) {
             last_btn3_interrupt = current_time;
             btn3_raw_press = 1;
