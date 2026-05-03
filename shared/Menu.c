@@ -11,9 +11,9 @@ extern Joystick_t joystick_data;     // Current joystick readings
 
 // Menu options
 static const char* menu_options[] = {
-    "Game 1",
-    "Game 2", 
-    "Game 3"
+    "Chess",
+    "Rock-It Ralph",
+    "Tron"
 };
 #define NUM_MENU_OPTIONS 3
 
@@ -45,7 +45,7 @@ static void render_home_menu(MenuSystem* menu) {
     }
     
     // Instructions
-    LCD_printString("Press BT3", 50, 240, 1, 1);
+    LCD_printString("Press joystick to select", 14, 230, 1, 1);
     
     LCD_Refresh(&cfg0);
 }

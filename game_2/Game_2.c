@@ -51,7 +51,7 @@ static PongEngine_t pong_engine;
  */
 static uint8_t game2_read_action(void)
 {
-    return (HAL_GPIO_ReadPin(BTN3_GPIO_Port, BTN3_Pin) == GPIO_PIN_RESET) ? 1 : 0;
+    return (HAL_GPIO_ReadPin(BTN2_GPIO_Port, BTN2_Pin) == GPIO_PIN_RESET) ? 1 : 0;
 }
 
 /**
@@ -74,7 +74,7 @@ MenuState Game2_Run(void)
     LCD_Fill_Buffer(0);
     LCD_printString("ROCK-IT", 48, 60,  HUD_COLOUR, 4);
     LCD_printString("RALPH",   66, 100, HUD_COLOUR, 4);
-    LCD_printString("B1 = Menu", 64, 170, HUD_COLOUR, 2);
+    LCD_printString("Joy = Menu", 60, 170, HUD_COLOUR, 2);
     LCD_Refresh(&cfg0);
     HAL_Delay(800);
 
@@ -184,7 +184,7 @@ MenuState Game2_Run(void)
                 LCD_printString(score_str, 12, 28 + offset, HUD_COLOUR, 2);
             }
 
-            LCD_printString("BT2 or BT3",  28, 80 + offset, HUD_COLOUR, 2);
+            LCD_printString("BT2 or Joy",  28, 80 + offset, HUD_COLOUR, 2);
             LCD_printString("to continue", 24, 98 + offset, HUD_COLOUR, 2);
 
             LCD_Refresh(&cfg0);

@@ -453,16 +453,16 @@ static void render_status(void) {
             LCD_printString("CHECK!", 155, 5, COL_CHECK, 1);
         }
 
-        /* Bottom bar: controls (joystick press = act, B1 = back) */
-        LCD_printString("Joy: select/move", 20, 224, COL_WHITE, 1);
-        LCD_printString("B1: cancel/menu",  20, 232, COL_WHITE, 1);
+        /* Bottom bar: controls (BT2 = act, joystick press = back) */
+        LCD_printString("BT2: select/move", 20, 224, COL_WHITE, 1);
+        LCD_printString("Joy: cancel/menu", 20, 232, COL_WHITE, 1);
 
     } else {
         /* Game-over screen */
         LCD_printString(
             (winner == 1) ? " WHITE WINS!" : " BLACK WINS!",
             15, 5, COL_WHITE, 2);
-        LCD_printString("Press B1 for menu", 30, 230, COL_WHITE, 1);
+        LCD_printString("Press joystick for menu", 14, 230, COL_WHITE, 1);
     }
 }
 
