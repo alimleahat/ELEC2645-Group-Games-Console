@@ -355,13 +355,12 @@ static void draw_piece(int16_t px, int16_t py, int8_t piece) {
             break;
 
         case KNIGHT:
-            /* Small triangular notch on top-right (horse profile) */
-            LCD_Draw_Line((int16_t)(cx + 2), (int16_t)(cy - 5),
-                          (int16_t)(cx + 5), (int16_t)(cy - 2), detail_col);
-            LCD_Draw_Line((int16_t)(cx + 5), (int16_t)(cy - 2),
-                          (int16_t)(cx + 2), (int16_t)(cy - 1), detail_col);
-            LCD_Draw_Line((int16_t)(cx + 2), (int16_t)(cy - 1),
-                          (int16_t)(cx + 2), (int16_t)(cy - 5), detail_col);
+            /* Two perpendicular bars forming a horse-profile L:
+             * vertical bar = neck, horizontal bar at top = muzzle */
+            LCD_Draw_Rect((int16_t)(cx - 2), (int16_t)(cy - 4),
+                          3, 7, detail_col, 1);   /* neck   */
+            LCD_Draw_Rect((int16_t)(cx - 2), (int16_t)(cy - 4),
+                          5, 3, detail_col, 1);   /* muzzle */
             break;
 
         case QUEEN:
@@ -371,11 +370,11 @@ static void draw_piece(int16_t px, int16_t py, int8_t piece) {
             break;
 
         case KING:
-            /* Cross (+) on top of body */
-            LCD_Draw_Line((int16_t)(cx - 2), (int16_t)(cy - body_r - 2),
-                          (int16_t)(cx + 2), (int16_t)(cy - body_r - 2), detail_col);
-            LCD_Draw_Line((int16_t)(cx),     (int16_t)(cy - body_r - 4),
-                          (int16_t)(cx),     (int16_t)(cy - body_r),     detail_col);
+            /* Bold + cross inside the body (7-px arms, 3-px thick) */
+            LCD_Draw_Rect((int16_t)(cx - 3), (int16_t)(cy - 1),
+                          7, 3, detail_col, 1);   /* horizontal arm */
+            LCD_Draw_Rect((int16_t)(cx - 1), (int16_t)(cy - 3),
+                          3, 7, detail_col, 1);   /* vertical arm   */
             break;
 
         default:
