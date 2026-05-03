@@ -74,9 +74,9 @@ MenuState Game2_Run(void)
     LCD_Fill_Buffer(0);
     LCD_printString("ROCK-IT", 48, 60,  HUD_COLOUR, 4);
     LCD_printString("RALPH",   66, 100, HUD_COLOUR, 4);
-    LCD_printString("BT3 = Menu", 56, 170, HUD_COLOUR, 2);
+    LCD_printString("B1 = Menu", 64, 170, HUD_COLOUR, 2);
     LCD_Refresh(&cfg0);
-    HAL_Delay(1800);
+    HAL_Delay(800);
 
     /* Initialise engine — parameters are kept from Ahmad's original main.c */
     PongEngine_Init(&pong_engine,

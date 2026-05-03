@@ -360,8 +360,6 @@ static void draw_score_bar(void)
     LCD_printString("P2", 178, 3, COL_P2, 1);
     snprintf(text, sizeof(text), "%u", (unsigned int)p2.score);
     LCD_printString(text, 198, 3, COL_P2, 2);
-
-    LCD_printString("BT2 PAUSE  BT3 EXIT", 63, 17, COL_WALL, 1);
 }
 
 static void draw_grid(void)

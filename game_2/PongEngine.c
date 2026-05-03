@@ -505,7 +505,7 @@ static void LoadLevel(PongEngine_t* engine)
 
     engine->remaining_rocks = 0;
     engine->boss_intro_timer = 0;
-    level_intro_timer = 65;
+    level_intro_timer = 20;   /* shorter level intro (~0.33s @ 60 FPS) */
 
     ClearEnemies(engine);
     ClearPickups(engine);
