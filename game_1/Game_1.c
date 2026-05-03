@@ -50,25 +50,27 @@ static uint8_t    joystick2_ready = 0;  /* init once, persist across menu re-ent
 
 /* ============================================================
  * Display layout  (240 x 320 portrait LCD)
- *   y  0 - 44  : status bar  (turn / check / win message)
- *   y 45 - 244 : chess board (8 * 25 = 200 px square)
- *   y 245 - 319: instruction bar
+ *   y  0 - 19  : status bar  (turn / check / win message)
+ *   y 20 - 219 : chess board (8 * 25 = 200 px square)
+ *   y 220 - 239: instruction bar
  * ============================================================ */
 #define BOARD_X    20     /* left edge of board (pixels)  */
-#define BOARD_Y    45     /* top  edge of board (pixels)  */
+#define BOARD_Y    20     /* top  edge of board (pixels)  */
 #define SQ_SIZE    25     /* pixels per square            */
 
-/* ---- 4-bit palette colour indices (ST7789V2 driver) ----
- *  0 = black   15 = white   (confirmed from Pong engine source)
- *  Remaining colours are palette-dependent; adjust if needed. */
+/* ---- 4-bit palette colour indices (PALETTE_DEFAULT) ----
+ *  0 = BLACK     1 = WHITE      6 = YELLOW    12 = BROWN
+ *  Cream/brown wood-board look using available palette. */
 #define COL_BG       0    /* background fill              */
-#define COL_LIGHT    7    /* light square                 */
-#define COL_DARK     3    /* dark  square                 */
-#define COL_CURSOR  10    /* cursor highlight             */
-#define COL_SEL      9    /* selected-piece highlight     */
-#define COL_VALID    4    /* valid-move indicator         */
-#define COL_WHITE   15    /* white / bright text          */
-#define COL_CHECK    2    /* check warning colour         */
+#define COL_LIGHT    1    /* light square (cream/white)   */
+#define COL_DARK    12    /* dark  square (brown)         */
+#define COL_CURSOR   6    /* cursor highlight (yellow)    */
+#define COL_SEL     14    /* selected-piece highlight     */
+#define COL_VALID    3    /* valid-move indicator (green) */
+#define COL_WHITE    1    /* bright text                  */
+#define COL_CHECK    2    /* check warning colour (red)   */
+#define COL_PIECE_W  1    /* white piece body             */
+#define COL_PIECE_B  0    /* black piece body             */
 
 /* ============================================================
  * Piece encoding
@@ -125,18 +127,6 @@ static int8_t  piece_type (int8_t p) { return (int8_t)(p < 0 ? -p : p); }
 static int8_t  piece_color(int8_t p) { return p > 0 ? 1 : p < 0 ? -1 : 0; }
 static uint8_t on_board   (int r, int c) {
     return (r >= 0 && r < 8 && c >= 0 && c < 8) ? 1u : 0u;
-}
-
-static char piece_char(int8_t piece) {
-    switch (piece_type(piece)) {
-        case PAWN:   return 'P';
-        case KNIGHT: return 'N';
-        case BISHOP: return 'B';
-        case ROOK:   return 'R';
-        case QUEEN:  return 'Q';
-        case KING:   return 'K';
-        default:     return ' ';
-    }
 }
 
 /* ============================================================
@@ -315,6 +305,84 @@ static void execute_move(int8_t to_row, int8_t to_col) {
 /* ============================================================
  * Rendering
  * ============================================================ */
+
+/* Draw a single piece icon centred in a square at (px, py).
+ * Each piece is a filled circle (the body) plus a small detail
+ * identifying it. White pieces are filled white with a dark
+ * outline ring; black pieces are filled black with a light ring. */
+static void draw_piece(int16_t px, int16_t py, int8_t piece) {
+    int16_t cx = (int16_t)(px + SQ_SIZE / 2);
+    int16_t cy = (int16_t)(py + SQ_SIZE / 2);
+
+    uint8_t is_white   = (piece > 0);
+    uint8_t body_col   = is_white ? COL_PIECE_W : COL_PIECE_B;
+    uint8_t detail_col = is_white ? COL_PIECE_B : COL_PIECE_W;
+    int8_t  type       = (int8_t)(is_white ? piece : -piece);
+
+    /* Body radii: pawn smallest, queen/king largest */
+    int16_t body_r;
+    switch (type) {
+        case PAWN:                  body_r = 5;  break;
+        case KNIGHT: case BISHOP:
+        case ROOK:                  body_r = 7;  break;
+        case QUEEN:  case KING:     body_r = 8;  break;
+        default:                    body_r = 7;  break;
+    }
+
+    /* Filled body + contrasting outline ring (1 px) */
+    LCD_Draw_Circle(cx, cy, (uint16_t)body_r,       body_col,   1);
+    LCD_Draw_Circle(cx, cy, (uint16_t)(body_r + 1), detail_col, 0);
+
+    /* Identifying detail */
+    switch (type) {
+        case PAWN:
+            /* Plain small circle — body only */
+            break;
+
+        case ROOK: {
+            /* Four small dots at N/S/E/W edges (turrets) */
+            int16_t d = (int16_t)(body_r - 1);
+            LCD_Draw_Circle((int16_t)(cx),     (int16_t)(cy - d), 1, detail_col, 1);
+            LCD_Draw_Circle((int16_t)(cx),     (int16_t)(cy + d), 1, detail_col, 1);
+            LCD_Draw_Circle((int16_t)(cx - d), (int16_t)(cy),     1, detail_col, 1);
+            LCD_Draw_Circle((int16_t)(cx + d), (int16_t)(cy),     1, detail_col, 1);
+            break;
+        }
+
+        case BISHOP:
+            /* Smaller filled circle in the middle (mitre) */
+            LCD_Draw_Circle(cx, cy, 3, detail_col, 1);
+            break;
+
+        case KNIGHT:
+            /* Small triangular notch on top-right (horse profile) */
+            LCD_Draw_Line((int16_t)(cx + 2), (int16_t)(cy - 5),
+                          (int16_t)(cx + 5), (int16_t)(cy - 2), detail_col);
+            LCD_Draw_Line((int16_t)(cx + 5), (int16_t)(cy - 2),
+                          (int16_t)(cx + 2), (int16_t)(cy - 1), detail_col);
+            LCD_Draw_Line((int16_t)(cx + 2), (int16_t)(cy - 1),
+                          (int16_t)(cx + 2), (int16_t)(cy - 5), detail_col);
+            break;
+
+        case QUEEN:
+            /* Small filled circle on top of body (orb) */
+            LCD_Draw_Circle(cx, (int16_t)(cy - body_r - 1), 2, body_col, 1);
+            LCD_Draw_Circle(cx, (int16_t)(cy - body_r - 1), 2, detail_col, 0);
+            break;
+
+        case KING:
+            /* Cross (+) on top of body */
+            LCD_Draw_Line((int16_t)(cx - 2), (int16_t)(cy - body_r - 2),
+                          (int16_t)(cx + 2), (int16_t)(cy - body_r - 2), detail_col);
+            LCD_Draw_Line((int16_t)(cx),     (int16_t)(cy - body_r - 4),
+                          (int16_t)(cx),     (int16_t)(cy - body_r),     detail_col);
+            break;
+
+        default:
+            break;
+    }
+}
+
 static void render_board(void) {
     int r, c;
 
@@ -322,45 +390,52 @@ static void render_board(void) {
         for (c = 0; c < 8; c++) {
             int16_t px = (int16_t)(BOARD_X + c * SQ_SIZE);
             int16_t py = (int16_t)(BOARD_Y + r * SQ_SIZE);
-            uint8_t sq_col;
+            int8_t  piece = board[r][c];
 
-            /* --- Determine square colour --- */
-            if ((uint8_t)r == cursor_row && (uint8_t)c == cursor_col) {
-                sq_col = COL_CURSOR;
-            } else if (sel_row >= 0 && r == (int)sel_row && c == (int)sel_col) {
-                sq_col = COL_SEL;
-            } else if (sel_row >= 0 && valid_moves[r][c]) {
-                sq_col = COL_VALID;
-            } else {
-                sq_col = ((r + c) % 2 == 0) ? COL_LIGHT : COL_DARK;
-            }
+            /* --- Square base colour (always the cream/brown pattern) --- */
+            uint8_t sq_col = ((r + c) % 2 == 0) ? COL_LIGHT : COL_DARK;
             LCD_Draw_Rect(px, py, SQ_SIZE, SQ_SIZE, sq_col, 1);
 
-            /* --- Draw piece --- */
-            int8_t piece = board[r][c];
+            /* --- Piece icon --- */
             if (piece != EMPTY) {
-                char str[2] = { piece_char(piece), '\0' };
+                draw_piece(px, py, piece);
+            }
 
-                if (piece > 0) {
-                    /* White piece: white badge with dark letter for contrast */
-                    LCD_Draw_Rect((int16_t)(px+3), (int16_t)(py+3),
-                                  (int16_t)(SQ_SIZE-6), (int16_t)(SQ_SIZE-6),
-                                  COL_WHITE, 1);
-                    LCD_printString(str, (int16_t)(px+7), (int16_t)(py+6), COL_BG, 2);
+            /* --- Valid-move indicator (small dot for empty,
+             *     ring around enemy piece to show capture) --- */
+            if (sel_row >= 0 && valid_moves[r][c]) {
+                int16_t cx = (int16_t)(px + SQ_SIZE / 2);
+                int16_t cy = (int16_t)(py + SQ_SIZE / 2);
+                if (piece == EMPTY) {
+                    LCD_Draw_Circle(cx, cy, 3, COL_VALID, 1);
                 } else {
-                    /* Black piece: dark badge with white letter */
-                    LCD_Draw_Rect((int16_t)(px+3), (int16_t)(py+3),
-                                  (int16_t)(SQ_SIZE-6), (int16_t)(SQ_SIZE-6),
-                                  COL_DARK, 1);
-                    LCD_printString(str, (int16_t)(px+7), (int16_t)(py+6), COL_WHITE, 2);
+                    LCD_Draw_Circle(cx, cy, 11, COL_VALID, 0);
+                    LCD_Draw_Circle(cx, cy, 12, COL_VALID, 0);
                 }
             }
 
-            /* --- Valid-move dot on empty squares --- */
-            if (sel_row >= 0 && valid_moves[r][c] && piece == EMPTY) {
-                LCD_Draw_Circle((int16_t)(px + SQ_SIZE/2),
-                                (int16_t)(py + SQ_SIZE/2),
-                                4, COL_WHITE, 1);
+            /* --- Selection highlight: 2-px coloured border --- */
+            if (sel_row >= 0 && r == (int)sel_row && c == (int)sel_col) {
+                LCD_Draw_Rect(px,                  py,                  SQ_SIZE, 1,       COL_SEL, 1);
+                LCD_Draw_Rect(px,                  (int16_t)(py+SQ_SIZE-1), SQ_SIZE, 1,   COL_SEL, 1);
+                LCD_Draw_Rect(px,                  py,                  1,       SQ_SIZE, COL_SEL, 1);
+                LCD_Draw_Rect((int16_t)(px+SQ_SIZE-1), py,              1,       SQ_SIZE, COL_SEL, 1);
+                LCD_Draw_Rect((int16_t)(px+1),       (int16_t)(py+1),   (int16_t)(SQ_SIZE-2), 1, COL_SEL, 1);
+                LCD_Draw_Rect((int16_t)(px+1),       (int16_t)(py+SQ_SIZE-2), (int16_t)(SQ_SIZE-2), 1, COL_SEL, 1);
+                LCD_Draw_Rect((int16_t)(px+1),       (int16_t)(py+1),   1, (int16_t)(SQ_SIZE-2), COL_SEL, 1);
+                LCD_Draw_Rect((int16_t)(px+SQ_SIZE-2), (int16_t)(py+1), 1, (int16_t)(SQ_SIZE-2), COL_SEL, 1);
+            }
+
+            /* --- Cursor: 2-px border in cursor colour (drawn last, on top) --- */
+            if ((uint8_t)r == cursor_row && (uint8_t)c == cursor_col) {
+                LCD_Draw_Rect(px,                  py,                  SQ_SIZE, 1,       COL_CURSOR, 1);
+                LCD_Draw_Rect(px,                  (int16_t)(py+SQ_SIZE-1), SQ_SIZE, 1,   COL_CURSOR, 1);
+                LCD_Draw_Rect(px,                  py,                  1,       SQ_SIZE, COL_CURSOR, 1);
+                LCD_Draw_Rect((int16_t)(px+SQ_SIZE-1), py,              1,       SQ_SIZE, COL_CURSOR, 1);
+                LCD_Draw_Rect((int16_t)(px+1),       (int16_t)(py+1),   (int16_t)(SQ_SIZE-2), 1, COL_CURSOR, 1);
+                LCD_Draw_Rect((int16_t)(px+1),       (int16_t)(py+SQ_SIZE-2), (int16_t)(SQ_SIZE-2), 1, COL_CURSOR, 1);
+                LCD_Draw_Rect((int16_t)(px+1),       (int16_t)(py+1),   1, (int16_t)(SQ_SIZE-2), COL_CURSOR, 1);
+                LCD_Draw_Rect((int16_t)(px+SQ_SIZE-2), (int16_t)(py+1), 1, (int16_t)(SQ_SIZE-2), COL_CURSOR, 1);
             }
         }
     }
@@ -379,16 +454,16 @@ static void render_status(void) {
             LCD_printString("CHECK!", 155, 5, COL_CHECK, 1);
         }
 
-        /* Bottom bar: controls */
-        LCD_printString("BT2:Select/Move", 20, 250, COL_WHITE, 1);
-        LCD_printString("BT3:Cancel/Menu", 20, 263, COL_WHITE, 1);
+        /* Bottom bar: controls (joystick press = act, B1 = back) */
+        LCD_printString("Joy: select/move", 20, 224, COL_WHITE, 1);
+        LCD_printString("B1: cancel/menu",  20, 232, COL_WHITE, 1);
 
     } else {
         /* Game-over screen */
         LCD_printString(
             (winner == 1) ? " WHITE WINS!" : " BLACK WINS!",
-            15, 8, COL_WHITE, 2);
-        LCD_printString("Press BT3 for Menu", 20, 280, COL_WHITE, 1);
+            15, 5, COL_WHITE, 2);
+        LCD_printString("Press B1 for menu", 30, 230, COL_WHITE, 1);
     }
 }
 
