@@ -1,14 +1,24 @@
 #ifndef GAME_3_H
 #define GAME_3_H
 
-#include "Menu.h"
-
-/**
- * @brief Run Game 3: Tron Light Cycles.
+/*
+ * Game_3.h - Battleship: Hot-Seat Naval Combat
  *
- * The menu system calls this when Game 3 is selected. The game owns its loop
- * and returns MENU_STATE_HOME when the player exits or the match ends.
+ * Public API kept compatible with the existing menu. Internals live in
+ * Game_3.c only so the upgrade stays inside the Game 3 boundary.
  */
+
+#include "Menu.h"
+#include <stdint.h>
+
 MenuState Game3_Run(void);
 
-#endif // GAME_3_H
+/* Compatibility setters retained for Menu.c. Battleship ignores these because
+ * the current version is always two-player hot-seat. */
+void    Game3_SetMode(uint8_t two_player);
+void    Game3_SetWrap(uint8_t on);
+
+uint8_t Game3_LastScoreP1(void);
+uint8_t Game3_LastScoreP2(void);
+
+#endif /* GAME_3_H */

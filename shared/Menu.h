@@ -37,4 +37,7 @@ void Menu_Init(MenuSystem* menu);
  */
 MenuState Menu_Run(MenuSystem* menu);
 
+// Sound gate consulted by games before playing tones. Returns 1 = on.
+uint8_t Menu_SoundEnabled(void);
+
 #endif // MENU_H
