@@ -13,9 +13,9 @@ Group project for ELEC2645 Embedded Systems — STM32 Nucleo-L476RG.
 ## Structure
 
 ```
-game_1/   — Chess (Ali)
+game_1/   — Chess (Ali Mleahat)
 game_2/   — Rock-It Ralph (Ahmad)
-game_3/   — Tron (Ali)
+game_3/   — Battle Ship (Ali Saleh)
 shared/   — Menu system and input handler
 Core/     — STM32 HAL files
 ```
